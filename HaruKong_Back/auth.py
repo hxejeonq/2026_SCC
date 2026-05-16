@@ -3,15 +3,20 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
+import os
 
 # ======================
 # 설정
 # ======================
-SECRET_KEY = "secret-key-change-this"  # ⚠️ 나중에 .env로 빼기
+SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# 🔥 bcrypt 안정 설정
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto"
+)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
@@ -40,17 +45,18 @@ def create_access_token(data: dict):
 
 
 # ======================
-# 현재 유저 추출 (🔥 핵심)
+# 현재 유저 추출 (🔥 프론트 연결 핵심)
 # ======================
 def get_current_user(token: str = Depends(oauth2_scheme)):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
 
         user_id = payload.get("user_id")
+
         if user_id is None:
             raise HTTPException(status_code=401, detail="Invalid token")
 
-        return user_id
+        return {"id": user_id}
 
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")

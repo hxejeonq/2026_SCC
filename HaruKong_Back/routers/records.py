@@ -9,13 +9,15 @@ from HaruKong_Back.auth import get_current_user
 router = APIRouter()
 
 
-# ➕ 기록 생성 (로그인 유저 자동 적용)
+# ➕ 기록 생성
 @router.post("/", response_model=RecordResponse)
 def create_record(
     record: RecordCreate,
     db: Session = Depends(get_db),
-    user_id: int = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
+    user_id = current_user["id"]
+
     new_record = Record(
         user_id=user_id,
         plan_id=record.plan_id,
@@ -26,13 +28,16 @@ def create_record(
     db.add(new_record)
     db.commit()
     db.refresh(new_record)
+
     return new_record
 
 
-# 📄 내 기록만 조회
+# 📄 내 기록 조회
 @router.get("/", response_model=list[RecordResponse])
 def get_records(
     db: Session = Depends(get_db),
-    user_id: int = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
+    user_id = current_user["id"]
+
     return db.query(Record).filter(Record.user_id == user_id).all()
