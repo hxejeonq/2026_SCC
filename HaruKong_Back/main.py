@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
-from HaruKong_Back.routers import users, plans, records, recommend
+from HaruKong_Back.routers import auth, users, plans, records, recommend
 from HaruKong_Back.database import engine
 
 
@@ -38,3 +38,5 @@ app.include_router(recommend.router, prefix="/recommend")
 @app.get("/")
 def root():
     return {"msg": "하루콩 API 시작 🍚"}
+
+app.include_router(auth.router, prefix="/auth")
