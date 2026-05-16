@@ -5,3 +5,8 @@ echo *.pyc >> .gitignore
 echo .venv/ >> .gitignore
 echo dist/ >> .gitignore
 echo build/ >> .gitignore
+
+.venv/
+venv/
+__pycache__/
+*.pyc
