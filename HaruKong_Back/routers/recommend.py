@@ -4,36 +4,43 @@ from sqlalchemy.orm import Session
 from HaruKong_Back.deps import get_db
 from HaruKong_Back.models.plan import Plan
 from HaruKong_Back.models.record import Record
+from HaruKong_Back.auth import get_current_user
 
 router = APIRouter()
 
 
-# 🔥 추천 API
-@router.get("/{user_id}")
-def recommend_places(user_id: int, db: Session = Depends(get_db)):
+# 🎯 추천 API (로그인 기반)
+@router.get("/")
+def recommend(
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user)
+):
 
-    # 1️⃣ 유저 기록 가져오기
+    # 🔍 유저의 최근 데이터 기반
+    plans = db.query(Plan).filter(Plan.user_id == user_id).all()
     records = db.query(Record).filter(Record.user_id == user_id).all()
 
-    # 2️⃣ 좋은 기록만 필터 (rating >= 4)
-    good_records = [r for r in records if r.rating >= 4]
+    # 💡 매우 단순한 추천 로직 (예시)
+    recommended = []
 
-    # 3️⃣ 해당 plan들 가져오기
-    plan_ids = [r.plan_id for r in good_records]
+    for plan in plans:
+        score = 0
 
-    plans = db.query(Plan).filter(Plan.id.in_(plan_ids)).all()
+        for record in records:
+            if record.plan_id == plan.id:
+                score += record.rating or 0
 
-    # 4️⃣ 추천 결과 만들기
-    result = []
-
-    for p in plans:
-        result.append({
-            "location": p.location,
-            "title": p.title,
-            "reason": "좋았던 경험 기반 추천 😼"
+        recommended.append({
+            "plan_id": plan.id,
+            "title": plan.title,
+            "location": plan.location,
+            "score": score
         })
+
+    # 🔥 점수 높은 순 정렬
+    recommended.sort(key=lambda x: x["score"], reverse=True)
 
     return {
         "user_id": user_id,
-        "recommendations": result
+        "recommendations": recommended
     }
